@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>校区定制公交 · 智能助手（三班推荐+时刻表）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f0f7ff;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .card {
+            max-width: 720px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: #1e3a8a;
+            color: white;
+            padding: 22px 28px;
+        }
+        .header h1 {
+            margin: 0 0 6px 0;
+            font-weight: 600;
+            font-size: 1.7rem;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.85;
+            font-size: 0.85rem;
+        }
+        .today-badge {
+            background: #fbbf24;
+            color: #1e3a8a;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .content {
+            padding: 24px 28px 32px;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 60px;
+        }
+        .mode-btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #1f2937;
+        }
+        .mode-btn.active {
+            background: white;
+            color: #1e3a8a;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        select, input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: 1.5px solid #e2e8f0;
+            background: #fefefe;
+            font-size: 1rem;
+            outline: none;
+        }
+        select:focus, input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+        .walk-time-group {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 24px;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+        .walk-slider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        input[type="range"] {
+            flex: 2;
+            min-width: 140px;
+            padding: 0;
+        }
+        .walk-value {
+            background: #e2e8f0;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            min-width: 75px;
+            text-align: center;
+        }
+        .btn-query {
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            border-radius: 44px;
+            margin-top: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-query:hover {
+            background: #2563eb;
+            transform: scale(0.98);
+        }
+        .btn-schedule {
+            background: #475569;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 44px;
+            margin-top: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-schedule:hover {
+            background: #334155;
+        }
+        .result-area {
+            margin-top: 28px;
+            background: #f1f5f9;
+            border-radius: 28px;
+            padding: 20px;
+            border-left: 5px solid #3b82f6;
+        }
+        .result-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .next-bus-item {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .next-bus-time {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #075985;
+        }
+        .wait-info {
+            font-size: 0.85rem;
+            color: #4b5563;
+            margin-top: 6px;
+        }
+        .badge-order {
+            display: inline-block;
+            background: #e2e8f0;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        .reminder {
+            background: #fef9e3;
+            border-radius: 20px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+        .info-note {
+            background: #e6f7ff;
+            border-radius: 20px;
+            padding: 10px 14px;
+            margin-bottom: 18px;
+            font-size: 0.8rem;
+            color: #0050b3;
+        }
+        .footnote {
+            margin-top: 24px;
+            font-size: 0.7rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-header {
+            background: #1e3a8a;
+            color: white;
+            padding: 18px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .schedule-table th, .schedule-table td {
+            padding: 8px 8px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .schedule-table th {
+            background: #f1f5f9;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .day-section {
+            margin-bottom: 24px;
+        }
+        .day-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #1e3a8a;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>🚌 定制公交助手</h1>
+        <p>校本部 ↔ 沙河院区 | 推荐最近三班 + 完整时刻表</p>
+        <div id="todayTypeBadge" class="today-badge">加载中...</div>
+    </div>
+    <div class="content">
+        <div class="mode-tabs">
+            <button class="mode-btn active" data-mode="now">🕒 现在出发</button>
+            <button class="mode-btn" data-mode="plan">📅 指定时间</button>
+        </div>
+
+        <div id="dynamicForm">
+            <div id="planOptions" style="display: none;">
+                <div class="input-group">
+                    <label>⏰ 预计出发时间 (24小时制)</label>
+                    <input type="time" id="customTime" value="09:30">
+                </div>
+                <div class="input-group">
+                    <label>📅 日期类型 (选择对应班表)</label>
+                    <select id="dayTypeSelect">
+                        <option value="weekday">🏢 工作日 (周一至周五)</option>
+                        <option value="weekend">🌴 周末 (周六、周日)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>📍 乘车地点</label>
+            <select id="locationSelect">
+                <option value="校本部">🏫 校本部 → 沙河院区</option>
+                <option value="沙河院区">🏘️ 沙河院区 → 校本部</option>
+            </select>
+        </div>
+
+        <div class="walk-time-group">
+            <label>🚶 步行到公交站需要的时间 (分钟)</label>
+            <div class="walk-slider">
+                <span>0 min</span>
+                <input type="range" id="walkMinutes" min="0" max="30" value="5" step="1">
+                <span id="walkMinutesDisplay" class="walk-value">5 分钟</span>
+            </div>
+            <div class="reminder" style="background:#eef2ff; margin-top: 8px;">
+                💡 系统会计算「到达车站时间」后，推荐最近三班车。
+            </div>
+        </div>
+
+        <button class="btn-query" id="queryBtn">🔍 查询最近三班车</button>
+        <button class="btn-schedule" id="showScheduleBtn">📋 查看完整时刻表</button>
+
+        <div class="result-area" id="resultArea">
+            <div class="result-title">🚌 推荐方案 (最近三班)</div>
+            <div id="resultContent">点击查询，获取最近三趟可乘坐班次</div>
+        </div>
+        <div class="footnote">
+            📅 基于您提供的图片时刻表（含3月16日起调整）<br>
+            ✅ “现在出发”自动识别今日类型；“指定时间”可手动选择工作日/周末
+        </div>
+    </div>
+</div>
+
+<!-- 完整时刻表弹窗 -->
+<div id="scheduleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📅 完整定制公交时刻表</h3>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- 动态生成时刻表 -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // ======================= 时刻表数据 =======================
+    // 校本部 → 沙河院区 (去程)
+    const weekdayCampusToShahe = [
+        "7:00", "8:30", "9:00", "10:00", "11:20", "11:30", 
+        "13:00", "15:20", "17:30", "18:00", "19:30", "20:30", "21:30"
+    ];
+    const weekendCampusToShahe = [
+        "8:30", "9:30", "10:30", "13:00", "19:00", "19:30", "20:30", "21:30"
+    ];
+
+    // 沙河院区 → 校本部 (返程)
+    const weekdayShaheToCampus = [
+        "7:45", "9:15", "9:55", "10:40", "12:00", "13:30", 
+        "16:20", "18:10", "18:40", "19:00", "20:00", "21:00", "22:00"
+    ];
+    const weekendShaheToCampus = [
+        "8:00", "9:00", "10:00", "12:30", "18:00", "19:00", "20:00", "21:00"
+    ];
+
+    // 判断今天是否是工作日
+    function isTodayWeekday() {
+        const day = new Date().getDay();
+        return day >= 1 && day <= 5;
+    }
+
+    // 获取时刻表数组 (字符串)
+    function getScheduleTable(location, isWeekday) {
+        if (location === "校本部") {
+            return isWeekday ? [...weekdayCampusToShahe] : [...weekendCampusToShahe];
+        } else {
+            return isWeekday ? [...weekdayShaheToCampus] : [...weekendShaheToCampus];
+        }
+    }
+
+    // 时间转分钟
+    function timeToMinutes(timeStr) {
+        const [hour, minute] = timeStr.split(':').map(Number);
+        return hour * 60 + minute;
+    }
+
+    // 核心：获取最近 N 班车 (最多3班，可扩展)
+    function getNextNBuses(scheduleStrings, baseMinutes, walkMins, n = 3) {
+        const scheduleMins = scheduleStrings.map(t => timeToMinutes(t)).sort((a,b)=>a-b);
+        const arrivalMinutes = baseMinutes + walkMins;
+        const result = [];
+        
+        // 找到第一个 >= arrivalMinutes 的索引
+        let startIndex = -1;
+        for (let i = 0; i < scheduleMins.length; i++) {
+            if (scheduleMins[i] >= arrivalMinutes) {
+                startIndex = i;
+                break;
+            }
+        }
+        
+        if (startIndex === -1) {
+            // 当天没有班次了，返回空数组（前端会提示次日首班）
+            return [];
+        }
+        
+        // 取从 startIndex 开始的 n 个班次
+        for (let i = 0; i < n && startIndex + i < scheduleMins.length; i++) {
+            const busMins = scheduleMins[startIndex + i];
+            const hour = Math.floor(busMins / 60);
+            const minute = busMins % 60;
+            const timeStr = `${hour.toString().padStart(2,'0')}:${minute.toString().padStart(2,'0')}`;
+            const waitMinutes = busMins - arrivalMinutes;
+            result.push({
+                busTime: timeStr,
+                waitMinutes: waitMinutes,
+                busMinutes: busMins,
+                order: i + 1
+            });
+        }
+        return result;
+    }
+
+    // 渲染最近三班车结果
+    function renderNextBuses(location, baseDesc, walkMins, nextBuses, isWeekdayFlag, hasNextDay = false) {
+        const direction = location === "校本部" ? "校本部 → 沙河院区" : "沙河院区 → 校本部";
+        const dayTypeText = isWeekdayFlag ? "工作日班表" : "周末班表";
+        
+        if (nextBuses.length === 0 && !hasNextDay) {
+            return `<div class="reminder">🌙 今日所有班次均已过点，无后续班次。</div>`;
+        }
+        
+        let html = `<div style="margin-bottom: 12px; color: #334155;">📍 ${direction} · ${dayTypeText}<br>⏱️ ${baseDesc} · 步行${walkMins}分钟到达车站</div>`;
+        
+        if (nextBuses.length === 0 && hasNextDay) {
+            html += `<div class="reminder">⚠️ 今日已无合适班次，请查看完整时刻表规划次日出行。</div>`;
+        } else {
+            for (let bus of nextBuses) {
+                const badgeText = bus.order === 1 ? "🚀 最近一班" : (bus.order === 2 ? "⏰ 第二班" : "📌 第三班");
+                html += `
+                    <div class="next-bus-item">
+                        <div>
+                            <span class="badge-order">${badgeText}</span>
+                            <span class="next-bus-time">${bus.busTime} 发车</span>
+                        </div>
+                        <div class="wait-info">
+                            ${bus.order === 1 ? '✅ 到站后需等候' : '🕒 后续班次等候'} <strong>${bus.waitMinutes}</strong> 分钟
+                            ${bus.order === 1 ? '（首选推荐）' : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            html += `<div class="reminder">💡 提示：请提前3-5分钟到达车站候车。如错过首班，可选择后续班次。</div>`;
+        }
+        return html;
+    }
+
+    // 主查询 (返回最近三班)
+    function performQuery(mode, location, walkMins, customTimeStr = null, customDayType = null) {
+        let isWeekday = true;
+        let baseMinutes = 0;
+        let baseDesc = "";
+        
+        if (mode === 'now') {
+            const now = new Date();
+            baseMinutes = now.getHours() * 60 + now.getMinutes();
+            baseDesc = `当前时间 ${now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+            isWeekday = isTodayWeekday();
+        } else {
+            if (!customTimeStr) customTimeStr = "09:30";
+            const [hour, minute] = customTimeStr.split(':').map(Number);
+            baseMinutes = (hour || 9) * 60 + (minute || 0);
+            baseDesc = `指定出发时间 ${customTimeStr}`;
+            isWeekday = (customDayType === 'weekday');
+        }
+        
+        const scheduleStrings = getScheduleTable(location, isWeekday);
+        if (!scheduleStrings.length) {
+            document.getElementById("resultContent").innerHTML = `<div class="reminder">❌ 当前${isWeekday ? '工作日' : '周末'}无班次数据。</div>`;
+            return;
+        }
+        
+        const nextBuses = getNextNBuses(scheduleStrings, baseMinutes, walkMins, 3);
+        const hasAnyBusToday = nextBuses.length > 0;
+        // 判断是否当天无班次（但可能有次日首班，我们只提示）
+        const hasNextDayButNoMore = (nextBuses.length === 0);
+        
+        const resultHtml = renderNextBuses(location, baseDesc, walkMins, nextBuses, isWeekday, hasNextDayButNoMore);
+        document.getElementById("resultContent").innerHTML = resultHtml;
+    }
+
+    // ======================= 完整时刻表弹窗 =======================
+    function buildFullScheduleHTML() {
+        // 构建工作日/周末 双向的时刻表
+        return `
+            <div class="day-section">
+                <div class="day-title">🏢 工作日班次 (周一至周五)</div>
+                <table class="schedule-table">
+                    <thead>
+                        <tr><th>方向</th><th>发车时间</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="font-weight:500;">校本部 → 沙河院区</td><td>${weekdayCampusToShahe.join('、')}</td></tr>
+                        <tr><td style="font-weight:500;">沙河院区 → 校本部</td><td>${weekdayShaheToCampus.join('、')}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="day-section" style="margin-top: 20px;">
+                <div class="day-title">🌴 周末班次 (周六、周日)</div>
+                <table class="schedule-table">
+                    <thead><tr><th>方向</th><th>发车时间</th></tr></thead>
+                    <tbody>
+                        <tr><td style="font-weight:500;">校本部 → 沙河院区</td><td>${weekendCampusToShahe.join('、')}</td></tr>
+                        <tr><td style="font-weight:500;">沙河院区 → 校本部</td><td>${weekendShaheToCampus.join('、')}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="reminder" style="margin-top: 16px;">
+                📌 备注：根据3月16日起调整，原11:30(校部)→12:00(沙河)更改为11:30→13:30；原16:00→17:00更改为15:20→16:20。<br>
+                以上时刻表已包含调整内容。
+            </div>
+        `;
+    }
+    
+    // 显示弹窗
+    const modal = document.getElementById("scheduleModal");
+    const modalBody = document.getElementById("modalBody");
+    const showScheduleBtn = document.getElementById("showScheduleBtn");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    
+    function openScheduleModal() {
+        modalBody.innerHTML = buildFullScheduleHTML();
+        modal.style.display = "flex";
+    }
+    
+    function closeModal() {
+        modal.style.display = "none";
+    }
+    
+    showScheduleBtn.addEventListener("click", openScheduleModal);
+    closeModalBtn.addEventListener("click", closeModal);
+    window.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+    });
+    
+    // ======================= UI 交互 =======================
+    let currentMode = "now";
+    const modeBtns = document.querySelectorAll(".mode-btn");
+    const planOptionsDiv = document.getElementById("planOptions");
+    const customTimeInput = document.getElementById("customTime");
+    const dayTypeSelect = document.getElementById("dayTypeSelect");
+    const locationSelect = document.getElementById("locationSelect");
+    const walkSlider = document.getElementById("walkMinutes");
+    const walkDisplay = document.getElementById("walkMinutesDisplay");
+    const queryBtn = document.getElementById("queryBtn");
+    const todayBadge = document.getElementById("todayTypeBadge");
+    
+    function updateTodayBadge() {
+        const now = new Date();
+        const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+        const weekName = weekdays[now.getDay()];
+        const isWeekdayToday = isTodayWeekday();
+        const typeText = isWeekdayToday ? "工作日" : "周末";
+        todayBadge.innerHTML = `📆 今日 ${weekName} · ${typeText}班表生效 (自动识别)`;
+    }
+    updateTodayBadge();
+    
+    modeBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            modeBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            currentMode = btn.getAttribute("data-mode");
+            if (currentMode === "now") {
+                planOptionsDiv.style.display = "none";
+            } else {
+                planOptionsDiv.style.display = "block";
+            }
+            autoQuery();
+        });
+    });
+    
+    function autoQuery() {
+        const location = locationSelect.value;
+        const walkMins = parseInt(walkSlider.value);
+        if (currentMode === "now") {
+            performQuery("now", location, walkMins, null, null);
+        } else {
+            const customTime = customTimeInput.value;
+            const selectedDayType = dayTypeSelect.value;
+            performQuery("plan", location, walkMins, customTime, selectedDayType);
+        }
+    }
+    
+    function updateWalkDisplay() {
+        const val = parseInt(walkSlider.value);
+        walkDisplay.innerText = val + " 分钟";
+    }
+    walkSlider.addEventListener("input", updateWalkDisplay);
+    walkSlider.addEventListener("change", () => autoQuery());
+    updateWalkDisplay();
+    
+    locationSelect.addEventListener("change", () => autoQuery());
+    if (customTimeInput) customTimeInput.addEventListener("change", () => autoQuery());
+    if (dayTypeSelect) dayTypeSelect.addEventListener("change", () => autoQuery());
+    queryBtn.addEventListener("click", () => autoQuery());
+    
+    setTimeout(() => autoQuery(), 100);
+</script>
+</body>
+</html>
